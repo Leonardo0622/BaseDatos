@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRUD Usuarios</title>
+</head>
+<body>
+    <h1>Lista de Usuarios</h1>
+    <form id="add-user-form">
+        <input type="text" id="name" placeholder="Nombre" required>
+        <input type="number" id="age" placeholder="Edad" required>
+        <button type="submit">Agregar Usuario</button>
+    </form>
+    <br>
+
+    <table border="1">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Edad</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="user-table">
+            <!-- Los datos se cargarán aquí -->
+        </tbody>
+    </table>
+
+    <script>
+        // Obtiene y muestra los usuarios
+        function loadUsers() {
+            fetch('http://localhost:3001/users')
+                .then(response => response.json())
+                .then(data => {
+                    const tableBody = document.getElementById('user-table');
+                    tableBody.innerHTML = ''; // Limpia la tabla antes de recargar
+                    data.forEach(user => {
+                        const row = `<tr>
+                            <td>${user._id}</td>
+                            <td>${user.name}</td>
+                            <td>${user.age}</td>
+                            <td>
+                                <button onclick="editUser('${user._id}', '${user.name}', ${user.age})">Editar</button>
+                                <button onclick="deleteUser('${user._id}')">Eliminar</button>
+                            </td>
+                        </tr>`;
+                        tableBody.innerHTML += row;
+                    });
+                })
+                .catch(error => console.error('Error al obtener los usuarios:', error));
+        }
+
+        // Crea un nuevo usuario
+        document.getElementById('add-user-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const age = document.getElementById('age').value;
+
+            fetch('http://localhost:3001/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, age })
+            })
+            .then(response => response.json())
+            .then(() => {
+                loadUsers(); // Recarga la tabla
+                document.getElementById('add-user-form').reset(); // Limpia el formulario
+            })
+            .catch(error => console.error('Error al agregar usuario:', error));
+        });
+
+        // Elimina un usuario
+        function deleteUser(id) {
+            fetch(`http://localhost:3001/users/${id}`, {
+                method: 'DELETE',
+            })
+            .then(() => loadUsers())
+            .catch(error => console.error('Error al eliminar usuario:', error));
+        }
+
+        // Edita un usuario
+        function editUser(id, currentName, currentAge) {
+            const newName = prompt("Nuevo nombre:", currentName);
+            const newAge = prompt("Nueva edad:", currentAge);
+
+            if (newName && newAge) {
+                fetch(`http://localhost:3001/users/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: newName, age: Number(newAge) })
+                })
+                .then(() => loadUsers())
+                .catch(error => console.error('Error al editar usuario:', error));
+            }
+        }
+
+        // Carga los usuarios al iniciar
+        loadUsers();
+    </script>
+</body>
+</html>
